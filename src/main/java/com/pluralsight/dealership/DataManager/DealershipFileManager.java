@@ -1,5 +1,7 @@
+package com.pluralsight.dealership.DataManager;
 
-package com.pluralsight.dealership;
+import com.pluralsight.dealership.Models.Dealership;
+import com.pluralsight.dealership.Models.Vehicle;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -10,7 +12,7 @@ public class DealershipFileManager {
         Dealership dealership = null;
         ArrayList<Vehicle> vehicles = new ArrayList<>();
 
-        try (BufferedReader br = new BufferedReader(new FileReader("inventory.csv"))) {
+        try (BufferedReader br = new BufferedReader(new FileReader("dealership.csv"))) {
             String line;
             int lineNumber = 0;
             while ((line = br.readLine()) != null) {
@@ -68,3 +70,4 @@ public class DealershipFileManager {
     }
 
 }
+

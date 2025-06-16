@@ -1,5 +1,4 @@
-
-package com.pluralsight.dealership;
+package com.pluralsight.dealership.Models;
 
 import java.util.ArrayList;
 import java.util.List;
