@@ -2,6 +2,7 @@ package com.pluralsight.dealership.Service;
 
 import com.pluralsight.dealership.Models.*;
 import com.pluralsight.dealership.DataManager.*;
+import org.apache.commons.dbcp2.BasicDataSource;
 
 
 import java.util.List;
@@ -10,9 +11,16 @@ import java.util.Scanner;
 public class UserInterface {
 
     private Dealership dealership;
+    private VehicleDAO vehicleDAO;
+    private ContractDAO contractDAO;
+
     private Scanner scanner;
 
-    public UserInterface() {
+    public UserInterface(BasicDataSource dataSource) {
+
+        this.vehicleDAO = new VehicleDAO(dataSource);
+        this.contractDAO = new ContractDAO(dataSource);
+
         scanner = new Scanner(System.in);
     }
 
@@ -187,14 +195,27 @@ public class UserInterface {
     }
 
     public void processGetAllVehiclesRequest() {
-        List<Vehicle> vehicles = dealership.getAllVehicles();
-        displayVehicles(vehicles);
+        List<Vehicle> vehicles = vehicleDAO.getAllVehicles();
+
+        if (!vehicles.isEmpty())
+            displayVehicles(vehicles);
+        else System.out.println("No vehicles to display!");
     }
 
     public void processAddVehicleRequest() {
-        System.out.print("Enter vehicle vin: ");
-        int vin = scanner.nextInt();
-        scanner.nextLine();
+        int vin = 0;
+        boolean enteringVIN = true;
+        while (enteringVIN) {
+            System.out.print("Enter vehicle vin (unique & 5 digits): ");
+            vin = Integer.parseInt(scanner.nextLine());
+
+            int finalVin = vin;
+            boolean uniqueVIN = vehicleDAO.getAllVehicles().stream().
+                    noneMatch(vehicle -> vehicle.getVin() == finalVin);
+            if (uniqueVIN && String.valueOf(vin).length() == 5)
+                enteringVIN = false;
+            else System.out.println("Error! VIN must be unique and 5 digits!");
+        }
 
         System.out.print("Enter vehicle make: ");
         String make = scanner.nextLine();
@@ -203,52 +224,34 @@ public class UserInterface {
         String model = scanner.nextLine();
 
         System.out.print("Enter vehicle year: ");
-        int year = scanner.nextInt();
-        scanner.nextLine();
+        int year = Integer.parseInt(scanner.nextLine());
 
         System.out.print("Enter vehicle price: ");
-        double price = scanner.nextDouble();
-        scanner.nextLine();
+        double price = Double.parseDouble(scanner.nextLine());
 
         System.out.print("Enter vehicle color: ");
         String color = scanner.nextLine();
 
         System.out.print("Enter vehicle mileage: ");
-        int mileage = scanner.nextInt();
-        scanner.nextLine();
+        int mileage = Integer.parseInt(scanner.nextLine());
 
         System.out.print("Enter vehicle type (Car, Truck, SUV, Motorcycle): ");
         String type = scanner.nextLine();
 
         Vehicle vehicle = new Vehicle(vin, year, make, model, type, color, mileage, price);
 
-        dealership.addVehicle(vehicle);
-        System.out.println("Vehicle added successfully!");
-        DealershipFileManager manager = new DealershipFileManager();
-        manager.saveDealership(dealership);
+        if (vehicleDAO.addVehicle(vehicle))
+            System.out.println("Vehicle successfully added!");
+        else System.out.println("Something went wrong! Vehicle not added.");
     }
 
     public void processRemoveVehicleRequest() {
         System.out.print("Enter the VIN of the vehicle you wish to remove: ");
         int vin = scanner.nextInt();
 
-        boolean vehicleRemoved = false;
-        for (Vehicle vehicle : dealership.getAllVehicles()) {
-            if (vehicle.getVin() == vin) {
-                dealership.removeVehicle(vehicle);
-                System.out.println("Vehicle removed successfully!");
-                vehicleRemoved = true;
-                break;
-            }
-        }
-
-        if (!vehicleRemoved) {
-            System.out.println("Vehicle not found. Please try again.");
-            return;
-        }
-
-        DealershipFileManager manager = new DealershipFileManager();
-        manager.saveDealership(dealership);
+       if (vehicleDAO.removeVehicle(vin))
+           System.out.println("Vehicle successfully deleted!");
+       else System.out.println("Something went wrong! Vehicle not deleted.");
     }
 
     private void init() {
