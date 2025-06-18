@@ -84,72 +84,12 @@ public class UserInterface {
         }
     }
 
-    public void processSellLeaseVehicleRequest() {
-        System.out.print("Enter the VIN of the vehicle to sell or lease: ");
-        int vin = scanner.nextInt();
-        scanner.nextLine();
-
-        Vehicle vehicle = null;
-
-        for (Vehicle vehicleInDealership : dealership.getAllVehicles()) {
-            if (vehicleInDealership.getVin() == vin) {
-                vehicle = vehicleInDealership;
-            }
-        }
-
-        if (vehicle == null) {
-            System.out.println("Vehicle not found. Please try again.");
-            return;
-        }
-
-        System.out.print("Enter the contract date (YYYYMMDD): ");
-        String contractDate = scanner.nextLine();
-
-        System.out.print("Enter the customer name: ");
-        String customerName = scanner.nextLine();
-
-        System.out.print("Enter the customer email: ");
-        String customerEmail = scanner.nextLine();
-
-        System.out.print("Is it a sale or lease? (sale/lease): ");
-        String contractType = scanner.nextLine();
-
-        Contract contract;
-        if (contractType.equalsIgnoreCase("sale")) {
-            System.out.print("Is financing available? (yes/no): ");
-            String financeOption = scanner.nextLine();
-
-            double salesTaxAmount = vehicle.getPrice() * 0.05;
-            double recordingFee = 100;
-            double processingFee = vehicle.getPrice() < 10000 ? 295 : 495;
-            boolean finance = financeOption.equalsIgnoreCase("yes");
-
-            contract = new SalesContract(contractDate, customerName, customerEmail, vehicle, salesTaxAmount, recordingFee, processingFee, finance);
-        } else if (contractType.equalsIgnoreCase("lease")) {
-            double expectedEndingValue = vehicle.getPrice() / 2;
-            double leaseFee = vehicle.getPrice() * 0.07;
-
-            contract = new LeaseContract(contractDate, customerName, customerEmail, vehicle, expectedEndingValue, leaseFee);
-        } else {
-            System.out.println("Invalid contract type. Please try again.");
-            return;
-        }
-
-        ContractFileManager.saveContract(contract);
-        dealership.removeVehicle(vehicle);
-
-        DealershipFileManager manager = new DealershipFileManager();
-        manager.saveDealership(dealership);
-
-        System.out.println("Contract saved successfully!");
-    }
-
     public void processGetByPriceRequest() {
         System.out.print("Enter minimum price: ");
-        double min = scanner.nextDouble();
+        double min = Double.parseDouble(scanner.nextLine());
         System.out.print("Enter maximum price: ");
-        double max = scanner.nextDouble();
-        List<Vehicle> vehicles = dealership.getVehiclesByPrice(min, max);
+        double max = Double.parseDouble(scanner.nextLine());
+        List<Vehicle> vehicles = vehicleDAO.getVehiclesByPrice(min, max);
         displayVehicles(vehicles);
     }
 
@@ -158,43 +98,45 @@ public class UserInterface {
         String make = scanner.nextLine();
         System.out.print("Enter model: ");
         String model = scanner.nextLine();
-        List<Vehicle> vehicles = dealership.getVehiclesByMakeModel(make, model);
+        List<Vehicle> vehicles = vehicleDAO.getVehiclesByMakeModel(make, model);
         displayVehicles(vehicles);
     }
 
     public void processGetByYearRequest() {
         System.out.print("Enter minimum year: ");
-        int min = scanner.nextInt();
+        int min = Integer.parseInt(scanner.nextLine());
         System.out.print("Enter maximum year: ");
-        int max = scanner.nextInt();
-        List<Vehicle> vehicles = dealership.getVehiclesByYear(min, max);
+        int max = Integer.parseInt(scanner.nextLine());
+        List<Vehicle> vehicles = vehicleDAO.getVehiclesByYear(min, max);
         displayVehicles(vehicles);
     }
 
     public void processGetByColorRequest() {
         System.out.print("Enter color: ");
         String color = scanner.nextLine();
-        List<Vehicle> vehicles = dealership.getVehiclesByColor(color);
+        List<Vehicle> vehicles = vehicleDAO.getVehiclesByColor(color);
         displayVehicles(vehicles);
     }
 
     public void processGetByMileageRequest() {
         System.out.print("Enter minimum mileage: ");
-        int min = scanner.nextInt();
+        int min = Integer.parseInt(scanner.nextLine());
         System.out.print("Enter maximum mileage: ");
-        int max = scanner.nextInt();
-        List<Vehicle> vehicles = dealership.getVehiclesByMileage(min, max);
+        int max = Integer.parseInt(scanner.nextLine());
+
+        List<Vehicle> vehicles = vehicleDAO.getVehiclesByMileage(min, max);
         displayVehicles(vehicles);
     }
 
     public void processGetByVehicleTypeRequest() {
         System.out.print("Enter vehicle type: ");
         String vehicleType = scanner.nextLine();
-        List<Vehicle> vehicles = dealership.getVehiclesByType(vehicleType);
+
+        List<Vehicle> vehicles = vehicleDAO.getVehiclesByType(vehicleType);
         displayVehicles(vehicles);
     }
 
-    public void processGetAllVehiclesRequest() {
+    public void processGetAllVehiclesRequest() { // Converted
         List<Vehicle> vehicles = vehicleDAO.getAllVehicles();
 
         if (!vehicles.isEmpty())
@@ -202,7 +144,7 @@ public class UserInterface {
         else System.out.println("No vehicles to display!");
     }
 
-    public void processAddVehicleRequest() {
+    public void processAddVehicleRequest() { // Converted
         int vin = 0;
         boolean enteringVIN = true;
         while (enteringVIN) {
@@ -245,7 +187,7 @@ public class UserInterface {
         else System.out.println("Something went wrong! Vehicle not added.");
     }
 
-    public void processRemoveVehicleRequest() {
+    public void processRemoveVehicleRequest() { // Converted
         System.out.print("Enter the VIN of the vehicle you wish to remove: ");
         int vin = scanner.nextInt();
 
@@ -263,6 +205,66 @@ public class UserInterface {
         for (Vehicle vehicle : vehicles) {
             System.out.println(vehicle.toString());
         }
+    }
+
+    public void processSellLeaseVehicleRequest() {
+        System.out.print("Enter the VIN of the vehicle to sell or lease: ");
+        int vin = scanner.nextInt();
+        scanner.nextLine();
+
+        Vehicle contractVehicle = null;
+
+        for (Vehicle vehicleInDealership : vehicleDAO.getAllVehicles()) {
+            if (vehicleInDealership.getVin() == vin) {
+                contractVehicle = vehicleInDealership;
+            }
+        }
+
+        if (contractVehicle == null) {
+            System.out.println("Vehicle not found. Please try again.");
+            return;
+        }
+
+        System.out.print("Enter the contract date (YYYYMMDD): ");
+        String contractDate = scanner.nextLine();
+
+        System.out.print("Enter the customer name: ");
+        String customerName = scanner.nextLine();
+
+        System.out.print("Enter the customer email: ");
+        String customerEmail = scanner.nextLine();
+
+        System.out.print("Is it a sale or lease? (sale/lease): ");
+        String contractType = scanner.nextLine();
+
+        Contract contract;
+        if (contractType.equalsIgnoreCase("sale")) {
+            System.out.print("Is financing available? (yes/no): ");
+            String financeOption = scanner.nextLine();
+
+            double salesTaxAmount = contractVehicle.getPrice() * 0.05;
+            double recordingFee = 100;
+            double processingFee = contractVehicle.getPrice() < 10000 ? 295 : 495;
+            boolean finance = financeOption.equalsIgnoreCase("yes");
+
+            contract = new SalesContract(contractDate, customerName, customerEmail, contractVehicle, salesTaxAmount, recordingFee, processingFee, finance);
+        } else if (contractType.equalsIgnoreCase("lease")) {
+            double expectedEndingValue = contractVehicle.getPrice() / 2;
+            double leaseFee = contractVehicle.getPrice() * 0.07;
+
+            contract = new LeaseContract(contractDate, customerName, customerEmail, contractVehicle, expectedEndingValue, leaseFee);
+        } else {
+            System.out.println("Invalid contract type. Please try again.");
+            return;
+        }
+
+        ContractFileManager.saveContract(contract);
+        dealership.removeVehicle(contractVehicle);
+
+        DealershipFileManager manager = new DealershipFileManager();
+        manager.saveDealership(dealership);
+
+        System.out.println("Contract saved successfully!");
     }
 
 }
