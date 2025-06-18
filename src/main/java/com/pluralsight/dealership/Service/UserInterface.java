@@ -5,12 +5,14 @@ import com.pluralsight.dealership.DataManager.*;
 import org.apache.commons.dbcp2.BasicDataSource;
 
 
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 
 public class UserInterface {
 
-    private Dealership dealership;
     private VehicleDAO vehicleDAO;
     private ContractDAO contractDAO;
 
@@ -25,7 +27,6 @@ public class UserInterface {
     }
 
     public void display() {
-        init();
         boolean quit = false;
         while (!quit) {
             System.out.println("---------- Menu ----------");
@@ -136,7 +137,7 @@ public class UserInterface {
         displayVehicles(vehicles);
     }
 
-    public void processGetAllVehiclesRequest() { // Converted
+    public void processGetAllVehiclesRequest() {
         List<Vehicle> vehicles = vehicleDAO.getAllVehicles();
 
         if (!vehicles.isEmpty())
@@ -144,7 +145,7 @@ public class UserInterface {
         else System.out.println("No vehicles to display!");
     }
 
-    public void processAddVehicleRequest() { // Converted
+    public void processAddVehicleRequest() {
         int vin = 0;
         boolean enteringVIN = true;
         while (enteringVIN) {
@@ -187,18 +188,13 @@ public class UserInterface {
         else System.out.println("Something went wrong! Vehicle not added.");
     }
 
-    public void processRemoveVehicleRequest() { // Converted
+    public void processRemoveVehicleRequest() {
         System.out.print("Enter the VIN of the vehicle you wish to remove: ");
         int vin = scanner.nextInt();
 
        if (vehicleDAO.removeVehicle(vin))
            System.out.println("Vehicle successfully deleted!");
        else System.out.println("Something went wrong! Vehicle not deleted.");
-    }
-
-    private void init() {
-        DealershipFileManager manager = new DealershipFileManager();
-        dealership = manager.getDealership();
     }
 
     private void displayVehicles(List<Vehicle> vehicles) {
@@ -225,8 +221,30 @@ public class UserInterface {
             return;
         }
 
-        System.out.print("Enter the contract date (YYYYMMDD): ");
+        System.out.print("Is it a sale or lease? (sale/lease): ");
+        String contractType = scanner.nextLine();
+
+        System.out.print("Enter the date (YYYY-MM-DD): ");
         String contractDate = scanner.nextLine();
+
+        String leaseEndDate = null;
+        if (contractType.equalsIgnoreCase("lease")){
+            boolean running = true;
+            while (running) {
+                System.out.print("Enter the lease end date (YYYY-MM-DD): ");
+                leaseEndDate = scanner.nextLine().trim();
+
+                if (leaseEndDate.isEmpty())
+                    throw new RuntimeException("Error! Please enter a date!");
+                else try {
+                    LocalDate.parse(leaseEndDate);
+                    running = false;
+                } catch (DateTimeException e){
+                    System.out.println("Something went wrong!\n" + e);
+                }
+
+            }
+        }
 
         System.out.print("Enter the customer name: ");
         String customerName = scanner.nextLine();
@@ -234,10 +252,6 @@ public class UserInterface {
         System.out.print("Enter the customer email: ");
         String customerEmail = scanner.nextLine();
 
-        System.out.print("Is it a sale or lease? (sale/lease): ");
-        String contractType = scanner.nextLine();
-
-        Contract contract;
         if (contractType.equalsIgnoreCase("sale")) {
             System.out.print("Is financing available? (yes/no): ");
             String financeOption = scanner.nextLine();
@@ -247,22 +261,24 @@ public class UserInterface {
             double processingFee = contractVehicle.getPrice() < 10000 ? 295 : 495;
             boolean finance = financeOption.equalsIgnoreCase("yes");
 
-            contract = new SalesContract(contractDate, customerName, customerEmail, contractVehicle, salesTaxAmount, recordingFee, processingFee, finance);
+            SalesContract salesContract = new SalesContract(contractDate, customerName, customerEmail, contractVehicle, salesTaxAmount, recordingFee, processingFee, finance);
+            if (contractDAO.addSalesContract(salesContract))
+                System.out.println("Success! Contract added.");
+            else System.out.println("Error! Failed to add contract.");
+
         } else if (contractType.equalsIgnoreCase("lease")) {
             double expectedEndingValue = contractVehicle.getPrice() / 2;
             double leaseFee = contractVehicle.getPrice() * 0.07;
 
-            contract = new LeaseContract(contractDate, customerName, customerEmail, contractVehicle, expectedEndingValue, leaseFee);
+            LeaseContract leaseContract = new LeaseContract(contractDate, leaseEndDate, customerName, customerEmail, contractVehicle, expectedEndingValue, leaseFee);
+            if (contractDAO.addLeaseContract(leaseContract))
+                System.out.println("Success! Contract added.");
+            else System.out.println("Error! Failed to add contract.");
         } else {
             System.out.println("Invalid contract type. Please try again.");
             return;
         }
 
-        ContractFileManager.saveContract(contract);
-        dealership.removeVehicle(contractVehicle);
-
-        DealershipFileManager manager = new DealershipFileManager();
-        manager.saveDealership(dealership);
 
         System.out.println("Contract saved successfully!");
     }

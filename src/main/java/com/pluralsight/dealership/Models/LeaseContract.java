@@ -3,12 +3,14 @@ package com.pluralsight.dealership.Models;
 public class LeaseContract extends Contract {
     private double expectedEndingValue;
     private double leaseFee;
+    private String endDate;
 
-    public LeaseContract(String date, String customerName, String customerEmail, Vehicle vehicleSold,
+    public LeaseContract(String date, String endDate, String customerName, String customerEmail, Vehicle vehicleSold,
                          double expectedEndingValue, double leaseFee) {
         super(date, customerName, customerEmail, vehicleSold);
         this.expectedEndingValue = expectedEndingValue;
         this.leaseFee = leaseFee;
+        this.endDate = endDate;
     }
 
     public double getExpectedEndingValue() {
@@ -25,6 +27,14 @@ public class LeaseContract extends Contract {
 
     public void setLeaseFee(double leaseFee) {
         this.leaseFee = leaseFee;
+    }
+
+    public String getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
     }
 
     @Override
